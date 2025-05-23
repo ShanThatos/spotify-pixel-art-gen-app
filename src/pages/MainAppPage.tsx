@@ -132,26 +132,62 @@ const MainAppPage: React.FC<MainAppPageProps> = ({ onLogout }) => {
     fetchCurrentlyPlayingSong();
   };
 
-  const handleDownloadPixelArt = async () => { // Make async
+  const handleDownloadPixelArt = async () => {
     if (currentlyPlaying?.item?.album?.images?.[0]?.url && pixelCanvasRef.current) {
       const imageUrl = currentlyPlaying.item.album.images[0].url;
       try {
         const highResPixelatedCanvas = await pixelateImage(imageUrl, blockSize, showBorders, pixelShape, alignPixels);
-        const dataURL = highResPixelatedCanvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.href = dataURL;
+        
         const albumName = currentlyPlaying?.item?.album?.name || 'spotify';
         const artistName = currentlyPlaying?.item?.artists?.[0]?.name || 'artist';
         const safeAlbumName = albumName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
         const safeArtistName = artistName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        link.download = `${safeArtistName}_${safeAlbumName}_pixel_art_block${blockSize}.png`;
-        document.body.appendChild(link); 
-        link.click();
-        document.body.removeChild(link);
+        const fileName = `${safeArtistName}_${safeAlbumName}_pixel_art_block${blockSize}.png`;
+
+        // Convert canvas to blob
+        const blob = await new Promise<Blob | null>(resolve => highResPixelatedCanvas.toBlob(resolve, 'image/png'));
+
+        if (!blob) {
+          throw new Error('Could not convert canvas to Blob.');
+        }
+
+        const fileToShare = new File([blob], fileName, { type: 'image/png' });
+
+        // Web Share API check (including device width)
+        if (window.innerWidth <= 768 && navigator.share && navigator.canShare && navigator.canShare({ files: [fileToShare] })) {
+          try {
+            await navigator.share({
+              files: [fileToShare],
+              title: `Pixel Art: ${albumName}`,
+              text: `Check out this pixel art I made for ${albumName} by ${artistName}!`,
+            });
+            console.log('Successfully shared the image.');
+          } catch (shareError) {
+            console.error('Error sharing:', shareError);
+            // Fallback to download if sharing fails (e.g., user cancels)
+            // alert('Sharing was cancelled or failed. Downloading the image instead.');
+            const dataURL = highResPixelatedCanvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+        } else {
+          // Fallback to download if Web Share API is not supported, cannot share files, or not on a mobile-sized screen
+          console.log('Web Share API not used (not supported, cannot share files, or not on mobile-sized screen), falling back to download.');
+          const dataURL = highResPixelatedCanvas.toDataURL('image/png');
+          const link = document.createElement('a');
+          link.href = dataURL;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
       } catch (err) {
-        console.error('Error generating high-res pixel art for download:', err);
-        // Optionally, show an error to the user
-        alert('Could not generate image for download. Please try again.');
+        console.error('Error generating or sharing/downloading pixel art:', err);
+        alert('Could not generate image for sharing or download. Please try again.');
       }
     }
   };
