@@ -241,6 +241,21 @@ const MainAppPage: React.FC<MainAppPageProps> = ({ onLogout }) => {
     };
   }, [fetchCurrentlyPlayingSong, isLoading, isRefreshing]);
 
+  // Effect for visibilitychange event to refresh song
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !isRefreshing && !isLoading) {
+        console.log('Page became visible, refreshing song.');
+        fetchCurrentlyPlayingSong();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchCurrentlyPlayingSong, isLoading, isRefreshing]);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-spotify-black via-spotify-gray-dark to-spotify-gradient-dark-gray text-spotify-text p-4 sm:p-6 md:p-8"> {/* Corrected gradient colors */}
       <div className="w-full max-w-3xl"> {/* Wrapper div for content centering */} 
