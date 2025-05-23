@@ -224,6 +224,23 @@ const MainAppPage: React.FC<MainAppPageProps> = ({ onLogout }) => {
     };
   }, [fetchCurrentlyPlayingSong, isRefreshing, isLoading]); // Add dependencies
 
+  // Effect for pageshow event to refresh song
+  useEffect(() => {
+    const handlePageShow = () => { // Removed unused 'event' parameter
+      // We might want to refresh even if the page is restored from the back/forward cache (bfcache),
+      // as the song could have changed.
+      if (!isRefreshing && !isLoading) {
+        console.log('pageshow event triggered, refreshing song.');
+        fetchCurrentlyPlayingSong();
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, [fetchCurrentlyPlayingSong, isLoading, isRefreshing]);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-spotify-black via-spotify-gray-dark to-spotify-gradient-dark-gray text-spotify-text p-4 sm:p-6 md:p-8"> {/* Corrected gradient colors */}
       <div className="w-full max-w-3xl"> {/* Wrapper div for content centering */} 
