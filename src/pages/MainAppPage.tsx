@@ -49,21 +49,35 @@ const MainAppPage: React.FC<MainAppPageProps> = ({ onLogout }) => {
     fetchCurrentlyPlayingSong();
   }, [fetchCurrentlyPlayingSong]);
 
-  // useEffect for pixelation (no changes here, just for context)
+  // useEffect for pixelation
   useEffect(() => {
     if (currentlyPlaying?.item?.album?.images?.[0]?.url && pixelCanvasRef.current) {
       const imageUrl = currentlyPlaying.item.album.images[0].url;
-      const canvas = pixelCanvasRef.current;
-      pixelateImage(imageUrl, canvas, blockSize)
+      const displayCanvas = pixelCanvasRef.current;
+      
+      pixelateImage(imageUrl, blockSize)
+        .then(pixelatedHighResCanvas => {
+          const displayCtx = displayCanvas.getContext('2d');
+          if (displayCtx) {
+            displayCtx.clearRect(0, 0, displayCanvas.width, displayCanvas.height);
+            // Scale the high-resolution canvas to fit the display canvas while maintaining aspect ratio
+            const scale = Math.min(displayCanvas.width / pixelatedHighResCanvas.width, displayCanvas.height / pixelatedHighResCanvas.height);
+            const scaledWidth = pixelatedHighResCanvas.width * scale;
+            const scaledHeight = pixelatedHighResCanvas.height * scale;
+            const offsetX = (displayCanvas.width - scaledWidth) / 2;
+            const offsetY = (displayCanvas.height - scaledHeight) / 2;
+            displayCtx.drawImage(pixelatedHighResCanvas, offsetX, offsetY, scaledWidth, scaledHeight);
+          }
+        })
         .catch(err => {
           console.error('Error during pixelation in component:', err);
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.font = '12px Arial';
-            ctx.fillStyle = 'red';
-            ctx.textAlign = 'center';
-            ctx.fillText('Could not pixelate image.', canvas.width / 2, canvas.height / 2);
+          const displayCtx = displayCanvas.getContext('2d');
+          if (displayCtx) {
+            displayCtx.clearRect(0, 0, displayCanvas.width, displayCanvas.height);
+            displayCtx.font = '12px Arial';
+            displayCtx.fillStyle = 'red';
+            displayCtx.textAlign = 'center';
+            displayCtx.fillText('Could not pixelate image.', displayCanvas.width / 2, displayCanvas.height / 2);
           }
         });
     } else if (pixelCanvasRef.current) {
@@ -87,19 +101,27 @@ const MainAppPage: React.FC<MainAppPageProps> = ({ onLogout }) => {
     fetchCurrentlyPlayingSong();
   };
 
-  const handleDownloadPixelArt = () => {
-    if (pixelCanvasRef.current) {
-      const canvas = pixelCanvasRef.current;
-      const dataURL = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.href = dataURL;
-      // Try to create a somewhat dynamic filename
-      const albumName = currentlyPlaying?.item?.album?.name || 'spotify';
-      const safeAlbumName = albumName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-      link.download = `${safeAlbumName}_pixel_art.png`;
-      document.body.appendChild(link); // Required for Firefox
-      link.click();
-      document.body.removeChild(link);
+  const handleDownloadPixelArt = async () => { // Make async
+    if (currentlyPlaying?.item?.album?.images?.[0]?.url && pixelCanvasRef.current) {
+      const imageUrl = currentlyPlaying.item.album.images[0].url;
+      try {
+        const highResPixelatedCanvas = await pixelateImage(imageUrl, blockSize);
+        const dataURL = highResPixelatedCanvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = dataURL;
+        const albumName = currentlyPlaying?.item?.album?.name || 'spotify';
+        const artistName = currentlyPlaying?.item?.artists?.[0]?.name || 'artist';
+        const safeAlbumName = albumName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        const safeArtistName = artistName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        link.download = `${safeArtistName}_${safeAlbumName}_pixel_art_block${blockSize}.png`;
+        document.body.appendChild(link); 
+        link.click();
+        document.body.removeChild(link);
+      } catch (err) {
+        console.error('Error generating high-res pixel art for download:', err);
+        // Optionally, show an error to the user
+        alert('Could not generate image for download. Please try again.');
+      }
     }
   };
 

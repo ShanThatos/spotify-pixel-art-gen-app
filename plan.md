@@ -115,30 +115,39 @@
 - [x] Add a button to manually re-fetch the currently playing song.
 - [x] Implement basic scroll-up-to-refresh on mobile (simulated via wheel event).
 
-### Task 4.4: "Download Pixel Art" Functionality (Optional)
-- [~] Allow users to download generated pixel art (e.g., PNG). (Button and basic logic added)
+### Task 4.4: "Download Pixel Art" Functionality
+- [x] Allow users to download generated pixel art (e.g., PNG).
   - [x] Canvas: `canvas.toDataURL('image/png')` and trigger download with an `<a>` tag.
+  - [x] Ensured high-resolution download by generating from the full-resolution pixelated canvas.
+  - [x] Improved filename to include artist, album, and block size (e.g., `artist_album_pixel_art_block10.png`).
 
 ### Task 4.5: Logout Functionality
 - [x] Implement a logout button to clear tokens and redirect to login.
+
+### Task 4.6: Final UI Touches
+- [x] Updated HTML page title to "Spotify Pixel Art Generator".
+- [x] Added a favicon (`favicon.png`) to the `public` folder and linked it in `index.html`.
 
 ---
 
 ## Phase 5: Deployment (Est. 1 day)
 
 ### Task 5.1: Build Optimization
-- [ ] Prepare for production deployment.
-  - [ ] Run Vite production build (`npm run build` or `yarn build`).
+- [~] Prepare for production deployment.
+  - [x] Run Vite production build (`npm run build`) as part of deployment. (Build script updated to use `vite build --mode production`, enabling use of `.env.production` for correct redirect URI).
   - [ ] Review bundle sizes and optimizations.
 
 ### Task 5.2: Deployment
-- [ ] Deploy SPA to GitHub Pages.
-  - [ ] Configure `vite.config.ts`: Set the `base` option to your repository name (e.g., `base: '/<YOUR_REPO_NAME>/'`).
-  - [ ] Run Vite production build (`npm run build` or `yarn build`). The output will be in the `dist` folder.
-  - [ ] Commit and push the `dist` folder (or configure a GitHub Action to build and deploy).
-  - [ ] Configure GitHub Repository settings for Pages: Select the branch and folder (usually `gh-pages` branch or `main`/`master` branch with `/docs` or `/dist` folder) for GitHub Pages source.
-  - [ ] Configure environment variables in GitHub Repository Secrets if needed (though `VITE_SPOTIFY_CLIENT_ID` and `VITE_REDIRECT_URI` are often public for PKCE, manage them as per your security assessment).
-  - [ ] Update the `Redirect URI` in the Spotify Developer Dashboard to the GitHub Pages URL (e.g., `https://<YOUR_USERNAME>.github.io/<YOUR_REPO_NAME>/callback`).
+- [~] Deploy SPA to GitHub Pages.
+  - [x] Installed `gh-pages` package.
+  - [x] Added `homepage` field to `package.json` (`https://ShanThatos.github.io/spotify-pixel-art-gen-app`).
+  - [x] Added `predeploy` (`npm run build`) and `deploy` (`gh-pages -d dist`) scripts to `package.json`.
+  - [x] Configured `vite.config.ts`: Set the `base` option to `/spotify-pixel-art-gen-app/`.
+  - [x] Created `.env.production` with `VITE_SPOTIFY_REDIRECT_URI=https://ShanThatos.github.io/spotify-pixel-art-gen-app`.
+  - [x] Initialized Git repository, committed files, and pushed to GitHub remote.
+  - [x] Successfully ran `npm run deploy` to build and deploy the application to the `gh-pages` branch.
+  - [ ] Verify deployment and functionality on GitHub Pages: [https://ShanThatos.github.io/spotify-pixel-art-gen-app](https://ShanThatos.github.io/spotify-pixel-art-gen-app)
+  - [ ] (User to ensure) Update the `Redirect URI` in the Spotify Developer Dashboard to match `VITE_SPOTIFY_REDIRECT_URI` from `.env.production` (i.e., `https://ShanThatos.github.io/spotify-pixel-art-gen-app`).
 
 ---
 

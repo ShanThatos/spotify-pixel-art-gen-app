@@ -15,76 +15,79 @@ function loadImage(imageUrl: string): Promise<HTMLImageElement> {
   });
 }
 
+const MIN_INTERNAL_RESOLUTION = 600; // Define the minimum resolution for processing
+
 /**
- * Pixelates an image and draws it onto a given canvas.
+ * Pixelates an image and returns a new canvas with the pixelated result.
  * @param imageUrl The URL of the image to pixelate.
- * @param outputCanvas The HTMLCanvasElement to draw the pixelated image onto.
  * @param blockSize The size of the pixel blocks (e.g., 10 for 10x10 blocks).
+ * @returns A Promise that resolves with an HTMLCanvasElement containing the pixelated image.
  */
 export async function pixelateImage(
   imageUrl: string,
-  outputCanvas: HTMLCanvasElement,
   blockSize: number
-): Promise<void> {
-  if (!outputCanvas) {
-    console.error('Output canvas not provided for pixelation.');
-    return;
-  }
+): Promise<HTMLCanvasElement> {
   if (blockSize <= 0) {
-    console.error('Block size must be greater than 0.');
-    return;
+    // console.error('Block size must be greater than 0.'); // Error will be caught by caller
+    throw new Error('Block size must be greater than 0.');
   }
 
-  try {
+  // try { // Not needed, async function errors will reject the promise
     const image = await loadImage(imageUrl);
-    const inputCanvas = document.createElement('canvas');
-    // Add willReadFrequently attribute here
-    const inputCtx = inputCanvas.getContext('2d', { willReadFrequently: true });
-    const outputCtx = outputCanvas.getContext('2d');
+    const processingCanvas = document.createElement('canvas'); // Was inputCanvas
+    const processingCtx = processingCanvas.getContext('2d', { willReadFrequently: true });
 
-    if (!inputCtx || !outputCtx) {
-      console.error('Failed to get canvas context.');
-      return;
+    if (!processingCtx) {
+      throw new Error('Failed to get processing canvas context.');
     }
 
-    // Resize input canvas to image dimensions
-    inputCanvas.width = image.width;
-    inputCanvas.height = image.height;
-    inputCtx.drawImage(image, 0, 0);
+    // Determine dimensions for the internal processing canvas (processingCanvas)
+    let internalWidth = image.width;
+    let internalHeight = image.height;
+    const aspectRatio = image.width / image.height;
 
-    // Clear output canvas (optional, good practice)
-    outputCtx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+    if (image.width < MIN_INTERNAL_RESOLUTION || image.height < MIN_INTERNAL_RESOLUTION) {
+      if (aspectRatio >= 1) { // Wider or square image
+        internalWidth = MIN_INTERNAL_RESOLUTION;
+        internalHeight = MIN_INTERNAL_RESOLUTION / aspectRatio;
+      } else { // Taller image
+        internalHeight = MIN_INTERNAL_RESOLUTION;
+        internalWidth = MIN_INTERNAL_RESOLUTION * aspectRatio;
+      }
+    }
+
+    processingCanvas.width = Math.round(internalWidth);
+    processingCanvas.height = Math.round(internalHeight);
+
+    // Draw the source image onto the processingCanvas, scaling it up if necessary
+    processingCtx.drawImage(image, 0, 0, processingCanvas.width, processingCanvas.height);
+
+    // Create the result canvas with the same dimensions as the processing canvas
+    const resultCanvas = document.createElement('canvas');
+    resultCanvas.width = processingCanvas.width;
+    resultCanvas.height = processingCanvas.height;
+    const resultCtx = resultCanvas.getContext('2d');
+
+    if (!resultCtx) {
+        throw new Error('Failed to get result canvas context.');
+    }
     
-    // Ensure output canvas has dimensions (can be same as image or scaled)
-    // For simplicity, let's make output canvas same as image size for now.
-    // The canvas element in MainAppPage is 300x300, so this might need adjustment
-    // or the image might be scaled before pixelation / output canvas scaled.
-    // Let's assume outputCanvas is already sized appropriately by the caller.
-    // We will draw the pixelated version matching the original image's aspect ratio
-    // scaled to fit the outputCanvas.
+    // No outputCtx.clearRect needed as resultCanvas is new and outputCanvas param is removed
+    // No finalScale, finalOffsetX, finalOffsetY needed here as we draw directly to resultCanvas matching processingCanvas size
 
-    const scaleX = outputCanvas.width / image.width;
-    const scaleY = outputCanvas.height / image.height;
-    // Use the smaller scale to maintain aspect ratio and fit within canvas
-    const scale = Math.min(scaleX, scaleY); 
+    for (let y = 0; y < processingCanvas.height; y += blockSize) {
+      for (let x = 0; x < processingCanvas.width; x += blockSize) {
+        const sampleWidth = Math.min(blockSize, processingCanvas.width - x);
+        const sampleHeight = Math.min(blockSize, processingCanvas.height - y);
 
-    const scaledWidth = image.width * scale;
-    const scaledHeight = image.height * scale;
+        if (sampleWidth <= 0 || sampleHeight <= 0) continue;
 
-    // Center the image on the output canvas
-    const offsetX = (outputCanvas.width - scaledWidth) / 2;
-    const offsetY = (outputCanvas.height - scaledHeight) / 2;
-
-
-    for (let y = 0; y < image.height; y += blockSize) {
-      for (let x = 0; x < image.width; x += blockSize) {
-        const imageData = inputCtx.getImageData(x, y, blockSize, blockSize);
+        const imageData = processingCtx.getImageData(x, y, sampleWidth, sampleHeight);
         const data = imageData.data;
         let r = 0, g = 0, b = 0, a = 0;
         let count = 0;
 
         for (let i = 0; i < data.length; i += 4) {
-          // Only count fully opaque pixels or handle transparency as needed
           if (data[i + 3] > 0) { // Check alpha channel
             r += data[i];
             g += data[i + 1];
@@ -98,32 +101,24 @@ export async function pixelateImage(
           const avgR = Math.round(r / count);
           const avgG = Math.round(g / count);
           const avgB = Math.round(b / count);
-          const avgA = Math.round(a / count); // Or use a fixed alpha like 255
-
-          outputCtx.fillStyle = `rgba(${avgR}, ${avgG}, ${avgB}, ${avgA / 255})`;
+          const avgA = Math.round(a / count); 
           
-          // Draw on the output canvas, scaled and offset
-          outputCtx.fillRect(
-            offsetX + (x * scale), 
-            offsetY + (y * scale), 
-            blockSize * scale, 
-            blockSize * scale
+          resultCtx.fillStyle = `rgba(${avgR}, ${avgG}, ${avgB}, ${avgA / 255})`;
+
+          // Draw the averaged block directly onto the resultCanvas
+          resultCtx.fillRect(
+            x, // Draw at the block's original x position
+            y, // Draw at the block's original y position
+            sampleWidth, // Use the actual sampleWidth for the block
+            sampleHeight // Use the actual sampleHeight for the block
           );
         }
       }
     }
-  } catch (error) {
-    console.error('Error pixelating image:', error);
-    // Optionally, draw an error message on the canvas
-    if (outputCanvas) {
-        const ctx = outputCanvas.getContext('2d');
-        if (ctx) {
-            ctx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
-            ctx.font = '16px Arial';
-            ctx.fillStyle = 'red';
-            ctx.textAlign = 'center';
-            ctx.fillText('Error loading image.', outputCanvas.width / 2, outputCanvas.height / 2);
-        }
-    }
-  }
+    return resultCanvas; // Return the high-resolution pixelated canvas
+  // } catch (error) { // Errors will propagate and reject the promise
+  //   console.error('Error pixelating image:', error);
+  //   // Remove drawing to outputCanvas as it's no longer a parameter
+  //   throw error; // Re-throw
+  // }
 }
