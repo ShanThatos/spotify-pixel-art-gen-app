@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  body {
+    @apply bg-spotify-black text-spotify-text;
+  }
+  /* Add other global styles or component base styles here if needed */
+}
