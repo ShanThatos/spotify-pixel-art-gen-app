@@ -1,7 +1,7 @@
 // src/pages/MainAppPage.tsx
 import React, { useEffect, useState, useRef, useCallback } from 'react'; // Added useCallback
 import { getCurrentlyPlayingSong, type CurrentlyPlayingResponse } from '../services/spotifyService';
-import { pixelateImage } from '../utils/pixelate';
+import { pixelateImage, type PixelShape } from '../utils/pixelate';
 
 interface MainAppPageProps {
   onLogout: () => void;
@@ -14,16 +14,47 @@ const MainAppPage: React.FC<MainAppPageProps> = ({ onLogout }) => {
   const [error, setError] = useState<string | null>(null);
   const pixelCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const INITIAL_BLOCK_SIZE = 15;
-  // Initialize blockSize from localStorage or use INITIAL_BLOCK_SIZE
   const [blockSize, setBlockSize] = useState<number>(() => {
     const savedBlockSize = localStorage.getItem('pixelBlockSize');
     return savedBlockSize ? Number(savedBlockSize) : INITIAL_BLOCK_SIZE;
   });
+  const [showBorders, setShowBorders] = useState<boolean>(() => {
+    const savedShowBorders = localStorage.getItem('showBorders');
+    return savedShowBorders ? JSON.parse(savedShowBorders) : false;
+  });
+  const [pixelShape, setPixelShape] = useState<PixelShape>(() => {
+    const savedPixelShape = localStorage.getItem('pixelShape');
+    return savedPixelShape ? (savedPixelShape as PixelShape) : 'square';
+  });
+  const [alignPixels, setAlignPixels] = useState<boolean>(() => {
+    const savedAlignPixels = localStorage.getItem('alignPixels');
+    return savedAlignPixels ? JSON.parse(savedAlignPixels) : false;
+  });
+  const [areSettingsVisible, setAreSettingsVisible] = useState<boolean>(() => {
+    const savedAreSettingsVisible = localStorage.getItem('areSettingsVisible');
+    return savedAreSettingsVisible ? JSON.parse(savedAreSettingsVisible) : true; // Default to true if not found
+  });
 
-  // Effect to save blockSize to localStorage whenever it changes
+  // Save settings to localStorage
   useEffect(() => {
     localStorage.setItem('pixelBlockSize', String(blockSize));
   }, [blockSize]);
+
+  useEffect(() => {
+    localStorage.setItem('showBorders', JSON.stringify(showBorders));
+  }, [showBorders]);
+
+  useEffect(() => {
+    localStorage.setItem('pixelShape', pixelShape);
+  }, [pixelShape]);
+
+  useEffect(() => {
+    localStorage.setItem('alignPixels', JSON.stringify(alignPixels));
+  }, [alignPixels]);
+
+  useEffect(() => {
+    localStorage.setItem('areSettingsVisible', JSON.stringify(areSettingsVisible));
+  }, [areSettingsVisible]);
 
   // Refactored fetchSong logic
   const fetchCurrentlyPlayingSong = useCallback(async () => {
@@ -55,7 +86,7 @@ const MainAppPage: React.FC<MainAppPageProps> = ({ onLogout }) => {
       const imageUrl = currentlyPlaying.item.album.images[0].url;
       const displayCanvas = pixelCanvasRef.current;
       
-      pixelateImage(imageUrl, blockSize)
+      pixelateImage(imageUrl, blockSize, showBorders, pixelShape, alignPixels)
         .then(pixelatedHighResCanvas => {
           const displayCtx = displayCanvas.getContext('2d');
           if (displayCtx) {
@@ -91,7 +122,7 @@ const MainAppPage: React.FC<MainAppPageProps> = ({ onLogout }) => {
         ctx.fillText('Album art will be pixelated here', canvas.width / 2, canvas.height / 2);
       }
     }
-  }, [currentlyPlaying, blockSize]);
+  }, [currentlyPlaying, blockSize, showBorders, pixelShape, alignPixels]);
 
   const handleLogoutClick = () => {
     onLogout();
@@ -105,7 +136,7 @@ const MainAppPage: React.FC<MainAppPageProps> = ({ onLogout }) => {
     if (currentlyPlaying?.item?.album?.images?.[0]?.url && pixelCanvasRef.current) {
       const imageUrl = currentlyPlaying.item.album.images[0].url;
       try {
-        const highResPixelatedCanvas = await pixelateImage(imageUrl, blockSize);
+        const highResPixelatedCanvas = await pixelateImage(imageUrl, blockSize, showBorders, pixelShape, alignPixels);
         const dataURL = highResPixelatedCanvas.toDataURL('image/png');
         const link = document.createElement('a');
         link.href = dataURL;
@@ -191,27 +222,22 @@ const MainAppPage: React.FC<MainAppPageProps> = ({ onLogout }) => {
               <p className="text-spotify-text-subdued">Loading song information...</p>
             )}
 
-            {/* Refreshing State */}
-            {isRefreshing && (
-              <p className="text-spotify-text-subdued">Refreshing song information...</p>
-            )}
-
             {/* Error State */}
             {error && <p className="text-red-400">Error: {error}</p>}
 
             {/* Song Details (if data exists and no error) */}
             {currentlyPlaying?.item && !error && (
               <div>
-                <p className="text-lg text-spotify-text truncate" title={currentlyPlaying.item.name}><span className="font-semibold">Song:</span> {currentlyPlaying.item.name}</p>
-                <p className="text-spotify-text-subdued truncate" title={currentlyPlaying.item.artists.map(artist => artist.name).join(', ')}><span className="font-semibold text-spotify-text">Artist(s):</span> {currentlyPlaying.item.artists.map(artist => artist.name).join(', ')}</p>
-                <p className="text-spotify-text-subdued truncate" title={currentlyPlaying.item.album.name}><span className="font-semibold text-spotify-text">Album:</span> {currentlyPlaying.item.album.name}</p>
                 {currentlyPlaying.item.album.images && currentlyPlaying.item.album.images.length > 0 && (
                   <img 
                     src={currentlyPlaying.item.album.images[0].url} 
                     alt={`Album art for ${currentlyPlaying.item.album.name}`} 
-                    className="w-full h-auto aspect-square mt-4 rounded shadow object-cover" /* Removed max-w-xs and mx-auto */
+                    className="w-full h-auto aspect-square mb-4 rounded shadow object-cover" // Moved image to the top and added mb-4
                   />
                 )}
+                <p className="text-lg text-spotify-text truncate" title={currentlyPlaying.item.name}><span className="font-semibold">Song:</span> {currentlyPlaying.item.name}</p>
+                <p className="text-spotify-text-subdued truncate" title={currentlyPlaying.item.artists.map(artist => artist.name).join(', ')}><span className="font-semibold text-spotify-text">Artist(s):</span> {currentlyPlaying.item.artists.map(artist => artist.name).join(', ')}</p>
+                <p className="text-spotify-text-subdued truncate" title={currentlyPlaying.item.album.name}><span className="font-semibold text-spotify-text">Album:</span> {currentlyPlaying.item.album.name}</p>
               </div>
             )}
             
@@ -222,34 +248,92 @@ const MainAppPage: React.FC<MainAppPageProps> = ({ onLogout }) => {
           </div>
 
           {/* Pixel Art Section */}
-          <div className="w-full md:w-1/2 p-6 bg-spotify-gray rounded-lg shadow-xl">
-            <h2 className="text-xl font-semibold mb-2 text-spotify-text">Pixel Art</h2>
-            
-            <div className="mb-4">
-              <label htmlFor="blockSizeSlider" className="block text-sm font-medium text-spotify-text-subdued mb-1">
-                Pixel Size: {blockSize}px
-              </label>
-              <input 
-                type="range" 
-                id="blockSizeSlider" 
-                min="5" 
-                max="50" 
-                step="1" 
-                value={blockSize} 
-                onChange={(e) => setBlockSize(Number(e.target.value))} 
-                className="w-full h-2 bg-spotify-light-gray rounded-lg appearance-none cursor-pointer accent-spotify-green"
-              />
-            </div>
+          <div className="w-full md:w-1/2 p-6 bg-spotify-gray rounded-lg shadow-xl flex flex-col"> {/* Added flex flex-col */}
+            <div className="flex-grow"> {/* Wrapper for content that grows */}
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-spotify-text">Pixel Art</h2>
+                <button
+                  onClick={() => setAreSettingsVisible(!areSettingsVisible)}
+                  className="text-sm text-spotify-green hover:text-spotify-green-hover font-medium transition-colors duration-150 ease-in-out cursor-pointer hover:underline"
+                >
+                  {areSettingsVisible ? 'Hide Settings' : 'Show Settings'}
+                </button>
+              </div>
+              
+              <div 
+                className={`transition-all duration-500 ease-in-out overflow-hidden ${areSettingsVisible ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
+              >
+                <div className="mb-4 mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4"> {/* Added mt-2 for spacing when visible */}
+                  <div>
+                    <label htmlFor="blockSizeSlider" className="block text-sm font-medium text-spotify-text-subdued mb-1">
+                      Pixel Size: {blockSize}px
+                    </label>
+                    <input 
+                      type="range" 
+                      id="blockSizeSlider" 
+                      min="5" 
+                      max="50" 
+                      step="1" 
+                      value={blockSize} 
+                      onChange={(e) => setBlockSize(Number(e.target.value))} 
+                      className="w-full h-2 bg-spotify-light-gray rounded-lg appearance-none cursor-pointer accent-spotify-green"
+                    />
+                  </div>
 
-            <canvas 
-              id="pixelArtCanvas" 
-              ref={pixelCanvasRef}
-              width="300" // Keep fixed, pixelateImage handles scaling to this
-              height="300" // Keep fixed, pixelateImage handles scaling to this
-              className="border border-spotify-light-gray mx-auto block bg-spotify-light-gray w-full aspect-square object-contain" /* Removed max-w-xs */
-              title="Pixel art will appear here"
-            ></canvas>
+                  <div>
+                    <label htmlFor="pixelShapeSelect" className="block text-sm font-medium text-spotify-text-subdued mb-1">
+                      Pixel Shape
+                    </label>
+                    <select
+                      id="pixelShapeSelect"
+                      value={pixelShape}
+                      onChange={(e) => setPixelShape(e.target.value as PixelShape)}
+                      className="w-full p-2 bg-spotify-light-gray border border-spotify-gray-light text-spotify-text rounded-md focus:ring-spotify-green focus:border-spotify-green text-sm cursor-pointer"
+                    >
+                      <option value="square">Square</option>
+                      <option value="circle">Circle</option>
+                    </select>
+                  </div>
+                  
+                  <div className="sm:col-span-2 flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      id="showBordersToggle"
+                      checked={showBorders}
+                      onChange={(e) => setShowBorders(e.target.checked)}
+                      className="h-4 w-4 text-spotify-green bg-spotify-light-gray border-spotify-gray-light rounded focus:ring-spotify-green accent-spotify-green cursor-pointer"
+                    />
+                    <label htmlFor="showBordersToggle" className="ml-2 text-sm font-medium text-spotify-text-subdued select-none cursor-pointer">
+                      Defined Pixels (Show Borders)
+                    </label>
+                  </div>
 
+                  <div className="sm:col-span-2 flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      id="alignPixelsToggle"
+                      checked={alignPixels}
+                      onChange={(e) => setAlignPixels(e.target.checked)}
+                      className="h-4 w-4 text-spotify-green bg-spotify-light-gray border-spotify-gray-light rounded focus:ring-spotify-green accent-spotify-green cursor-pointer"
+                    />
+                    <label htmlFor="alignPixelsToggle" className="ml-2 text-sm font-medium text-spotify-text-subdued select-none cursor-pointer">
+                      Align Pixels
+                    </label>
+                  </div>
+                </div> {/* Closing tag for the settings grid div */}
+              </div> {/* Add closing tag for the animated settings container div */}
+
+              <canvas
+                id="pixelArtCanvas" 
+                ref={pixelCanvasRef}
+                width="300" // Keep fixed, pixelateImage handles scaling to this
+                height="300" // Keep fixed, pixelateImage handles scaling to this
+                className="border border-spotify-light-gray mx-auto block bg-spotify-light-gray w-full aspect-square object-contain" /* Removed max-w-xs */
+                title="Pixel art will appear here"
+              ></canvas>
+            </div> {/* Closing flex-grow wrapper */}
+
+            {/* Download button moved below the canvas and outside the flex-grow wrapper */}
             {currentlyPlaying?.item?.album?.images?.[0]?.url && (
               <button
                 onClick={handleDownloadPixelArt}

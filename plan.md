@@ -133,12 +133,11 @@
 ## Phase 5: Deployment (Est. 1 day)
 
 ### Task 5.1: Build Optimization
-- [~] Prepare for production deployment.
+- [x] Prepare for production deployment.
   - [x] Run Vite production build (`npm run build`) as part of deployment. (Build script updated to use `vite build --mode production`, enabling use of `.env.production` for correct redirect URI).
-  - [ ] Review bundle sizes and optimizations.
 
 ### Task 5.2: Deployment
-- [~] Deploy SPA to GitHub Pages.
+- [x] Deploy SPA to GitHub Pages.
   - [x] Installed `gh-pages` package.
   - [x] Added `homepage` field to `package.json` (`https://ShanThatos.github.io/spotify-pixel-art-gen-app`).
   - [x] Added `predeploy` (`npm run build`) and `deploy` (`gh-pages -d dist`) scripts to `package.json`.
@@ -146,8 +145,40 @@
   - [x] Created `.env.production` with `VITE_SPOTIFY_REDIRECT_URI=https://ShanThatos.github.io/spotify-pixel-art-gen-app`.
   - [x] Initialized Git repository, committed files, and pushed to GitHub remote.
   - [x] Successfully ran `npm run deploy` to build and deploy the application to the `gh-pages` branch.
-  - [ ] Verify deployment and functionality on GitHub Pages: [https://ShanThatos.github.io/spotify-pixel-art-gen-app](https://ShanThatos.github.io/spotify-pixel-art-gen-app)
-  - [ ] (User to ensure) Update the `Redirect URI` in the Spotify Developer Dashboard to match `VITE_SPOTIFY_REDIRECT_URI` from `.env.production` (i.e., `https://ShanThatos.github.io/spotify-pixel-art-gen-app`).
+  - [x] Verify deployment and functionality on GitHub Pages: [https://ShanThatos.github.io/spotify-pixel-art-gen-app](https://ShanThatos.github.io/spotify-pixel-art-gen-app)
+  - [x] (User to ensure) Update the `Redirect URI` in the Spotify Developer Dashboard to match `VITE_SPOTIFY_REDIRECT_URI` from `.env.production` (i.e., `https://ShanThatos.github.io/spotify-pixel-art-gen-app`).
+
+---
+
+## Phase 6: New Feature Implementation (Post-Initial Deployment)
+
+### Task 6.1: Implement Pixel Border Toggle
+- [x] Add a UI toggle (e.g., switch) labeled "Defined Pixels" or "Show Borders" to `MainAppPage.tsx`.
+- [x] Create a state variable (e.g., `showBorders: boolean`) in `MainAppPage.tsx` to control this feature.
+- [x] Pass `showBorders` to the `pixelateImage` function.
+- [x] Update `pixelateImage` in `src/utils/pixelate.ts` to draw borders around pixels if `showBorders` is true (already partially implemented).
+- [x] Store and retrieve `showBorders` preference in `localStorage`.
+
+### Task 6.2: Implement Pixel Shape Selector
+- [x] Add a UI dropdown/select element labeled "Pixel Shape" to `MainAppPage.tsx` with options "Square" and "Circle".
+- [x] Create a state variable (e.g., `pixelShape: PixelShape`) in `MainAppPage.tsx` to control this feature (`PixelShape` type already defined in `pixelate.ts`).
+- [x] Pass `pixelShape` to the `pixelateImage` function.
+- [x] Update `pixelateImage` in `src/utils/pixelate.ts` to draw square or circular pixels based on `pixelShape` (already partially implemented).
+- [x] Store and retrieve `pixelShape` preference in `localStorage`.
+
+### Task 6.3: Implement Pixel Alignment Toggle
+- [x] Add a UI toggle (e.g., switch) labeled "Align Pixels" to `MainAppPage.tsx`.
+- [x] Create a state variable (e.g., `alignPixels: boolean`) in `MainAppPage.tsx` to control this feature.
+- [x] Pass `alignPixels` to the `pixelateImage` function.
+- [x] Update `pixelateImage` in `src/utils/pixelate.ts` to adjust pixel calculations if `alignPixels` is true.
+- [x] Store and retrieve `alignPixels` preference in `localStorage`.
+
+### Task 6.4: Integrate New Features into UI Logic
+- [x] Ensure `MainAppPage.tsx` correctly calls `pixelateImage` with the new `showBorders`, `pixelShape`, and `alignPixels` arguments when:
+    - [x] Initially generating the pixel art.
+    - [x] Re-generating pixel art (e.g., when block size changes, song changes, or new controls are toggled).
+    - [x] Downloading the pixel art.
+
 
 ---
 
