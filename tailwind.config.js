@@ -11,7 +11,8 @@ export default {
         'spotify-gray': '#191919', // A slightly lighter gray for cards/elements
         'spotify-gray-dark': '#101010', // Original intended for gradient middle color
         'spotify-gradient-dark-gray': '#0D0D0D', // Renamed from spotify-dark-gray, for gradient end color
-        'spotify-light-gray': '#282828',
+        'spotify-light-gray': '#404040',
+        'spotify-card': '#252525', // Made card color slightly darker
         'spotify-text': '#FFFFFF',
         'spotify-text-subdued': '#B3B3B3',
         'spotify-green': '#1DB954',

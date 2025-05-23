@@ -20,7 +20,7 @@ const MainAppPage: React.FC<MainAppPageProps> = ({ onLogout }) => {
   });
   const [showBorders, setShowBorders] = useState<boolean>(() => {
     const savedShowBorders = localStorage.getItem('showBorders');
-    return savedShowBorders ? JSON.parse(savedShowBorders) : false;
+    return savedShowBorders ? JSON.parse(savedShowBorders) : true;
   });
   const [pixelShape, setPixelShape] = useState<PixelShape>(() => {
     const savedPixelShape = localStorage.getItem('pixelShape');
@@ -28,11 +28,11 @@ const MainAppPage: React.FC<MainAppPageProps> = ({ onLogout }) => {
   });
   const [alignPixels, setAlignPixels] = useState<boolean>(() => {
     const savedAlignPixels = localStorage.getItem('alignPixels');
-    return savedAlignPixels ? JSON.parse(savedAlignPixels) : false;
+    return savedAlignPixels ? JSON.parse(savedAlignPixels) : true;
   });
   const [areSettingsVisible, setAreSettingsVisible] = useState<boolean>(() => {
     const savedAreSettingsVisible = localStorage.getItem('areSettingsVisible');
-    return savedAreSettingsVisible ? JSON.parse(savedAreSettingsVisible) : true; // Default to true if not found
+    return savedAreSettingsVisible ? JSON.parse(savedAreSettingsVisible) : false;
   });
 
   // Save settings to localStorage
@@ -91,8 +91,8 @@ const MainAppPage: React.FC<MainAppPageProps> = ({ onLogout }) => {
           const displayCtx = displayCanvas.getContext('2d');
           if (displayCtx) {
             displayCtx.clearRect(0, 0, displayCanvas.width, displayCanvas.height);
-            // Scale the high-resolution canvas to fit the display canvas while maintaining aspect ratio
-            const scale = Math.min(displayCanvas.width / pixelatedHighResCanvas.width, displayCanvas.height / pixelatedHighResCanvas.height);
+            // Scale the high-resolution canvas to cover the display canvas while maintaining aspect ratio
+            const scale = Math.max(displayCanvas.width / pixelatedHighResCanvas.width, displayCanvas.height / pixelatedHighResCanvas.height); // Use Math.max for cover
             const scaledWidth = pixelatedHighResCanvas.width * scale;
             const scaledHeight = pixelatedHighResCanvas.height * scale;
             const offsetX = (displayCanvas.width - scaledWidth) / 2;
@@ -200,7 +200,7 @@ const MainAppPage: React.FC<MainAppPageProps> = ({ onLogout }) => {
         <div className="flex flex-col md:flex-row md:space-x-8 mx-auto"> {/* Removed w-full and max-w-3xl from here, mx-auto for inner centering if needed */}
 
           {/* Currently Playing Section */}
-          <div className="w-full md:w-1/2 p-6 bg-spotify-gray rounded-lg shadow-xl mb-6 md:mb-0">
+          <div className="w-full md:w-1/2 p-6 bg-spotify-card rounded-lg shadow-xl mb-6 md:mb-0"> {/* Changed to bg-spotify-card */}
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-spotify-text">Currently Playing</h2>
               <button
@@ -248,7 +248,7 @@ const MainAppPage: React.FC<MainAppPageProps> = ({ onLogout }) => {
           </div>
 
           {/* Pixel Art Section */}
-          <div className="w-full md:w-1/2 p-6 bg-spotify-gray rounded-lg shadow-xl flex flex-col"> {/* Added flex flex-col */}
+          <div className="w-full md:w-1/2 p-6 bg-spotify-card rounded-lg shadow-xl flex flex-col"> {/* Changed to bg-spotify-card */}
             <div className="flex-grow"> {/* Wrapper for content that grows */}
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-spotify-text">Pixel Art</h2>
@@ -288,33 +288,33 @@ const MainAppPage: React.FC<MainAppPageProps> = ({ onLogout }) => {
                       id="pixelShapeSelect"
                       value={pixelShape}
                       onChange={(e) => setPixelShape(e.target.value as PixelShape)}
-                      className="w-full p-2 bg-spotify-light-gray border border-spotify-gray-light text-spotify-text rounded-md focus:ring-spotify-green focus:border-spotify-green text-sm cursor-pointer"
+                      className="w-full p-2 bg-spotify-light-gray border border-spotify-light-gray text-spotify-text rounded-md focus:ring-spotify-green focus:border-spotify-green text-sm cursor-pointer custom-select-arrow"
                     >
                       <option value="square">Square</option>
                       <option value="circle">Circle</option>
                     </select>
                   </div>
                   
-                  <div className="sm:col-span-2 flex items-center cursor-pointer">
+                  <div className="sm:col-span-2 flex items-center">
                     <input
                       type="checkbox"
                       id="showBordersToggle"
                       checked={showBorders}
                       onChange={(e) => setShowBorders(e.target.checked)}
-                      className="h-4 w-4 text-spotify-green bg-spotify-light-gray border-spotify-gray-light rounded focus:ring-spotify-green accent-spotify-green cursor-pointer"
+                      className="h-4 w-4 text-spotify-green bg-spotify-light-gray border-spotify-light-gray rounded focus:ring-spotify-green accent-spotify-green cursor-pointer"
                     />
                     <label htmlFor="showBordersToggle" className="ml-2 text-sm font-medium text-spotify-text-subdued select-none cursor-pointer">
                       Defined Pixels (Show Borders)
                     </label>
                   </div>
 
-                  <div className="sm:col-span-2 flex items-center cursor-pointer">
+                  <div className="sm:col-span-2 flex items-center">
                     <input
                       type="checkbox"
                       id="alignPixelsToggle"
                       checked={alignPixels}
                       onChange={(e) => setAlignPixels(e.target.checked)}
-                      className="h-4 w-4 text-spotify-green bg-spotify-light-gray border-spotify-gray-light rounded focus:ring-spotify-green accent-spotify-green cursor-pointer"
+                      className="h-4 w-4 text-spotify-green bg-spotify-light-gray border-spotify-light-gray rounded focus:ring-spotify-green accent-spotify-green cursor-pointer"
                     />
                     <label htmlFor="alignPixelsToggle" className="ml-2 text-sm font-medium text-spotify-text-subdued select-none cursor-pointer">
                       Align Pixels

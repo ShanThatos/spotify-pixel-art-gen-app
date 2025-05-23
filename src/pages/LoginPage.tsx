@@ -40,7 +40,7 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-spotify-black via-spotify-gray-dark to-spotify-gradient-dark-gray text-spotify-text p-6">
-      <div className="bg-spotify-black bg-opacity-70 p-8 sm:p-10 rounded-xl shadow-2xl text-center max-w-md w-full">
+      <div className="bg-spotify-card bg-opacity-75 p-8 sm:p-10 rounded-xl shadow-2xl text-center max-w-md w-full">
         {/* <img src="/spotify-logo-pixel.png" alt="Spotify Pixelated Logo" className="w-24 h-24 mx-auto mb-6" /> */}
         <h1 
           className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 md:mb-8 text-center bg-gradient-to-r from-spotify-green to-spotify-green-hover bg-clip-text text-transparent drop-shadow-sm">
